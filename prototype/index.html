@@ -36,17 +36,19 @@ body {
   color: var(--text);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   min-height: 100vh;
   padding: 20px 0;
 }
 
 .device-frame {
-  width: 390px;
-  min-height: 844px;
+  width: 430px;
+  height: 932px;
   background: var(--bg);
-  border-radius: 40px;
+  border-radius: 56px;
   overflow: hidden;
+  flex-shrink: 0;
+  transform-origin: center center;
   position: relative;
   box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
   display: flex;
@@ -1461,7 +1463,20 @@ function initCharts() {
 }
 
 // Init on load
-window.addEventListener('load', initCharts);
+window.addEventListener('load', () => {
+  initCharts();
+  scaleDevice();
+});
+
+// ── SCALE TO VIEWPORT ────────────────────────
+function scaleDevice() {
+  const frame = document.getElementById('app');
+  const scaleH = (window.innerHeight - 40) / 932;
+  const scaleW = (window.innerWidth - 40) / 430;
+  const scale = Math.min(1, scaleH, scaleW);
+  frame.style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', scaleDevice);
 </script>
 </body>
 </html>
