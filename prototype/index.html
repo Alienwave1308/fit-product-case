@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fit — Прототип</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;900&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --purple: #7a00df;
+  --purple-light: #9469f3;
+  --purple-dark: #6f3dd0;
+  --bg: #141418;
+  --card: #222228;
+  --card2: #2a2a32;
+  --border: #333340;
+  --text: #ececec;
+  --text-secondary: #7D828C;
+  --text-muted: #4a4a55;
+  --blue: #066aab;
+  --green: #34c759;
+  --orange: #ff9500;
+  --red: #fb7662;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font-head: 'Unbounded', sans-serif;
+  --font-body: 'Open Sans', sans-serif;
+}
+
+body {
+  background: #0f0f13;
+  font-family: var(--font-body);
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 20px 0;
+}
+
+.device-frame {
+  width: 390px;
+  min-height: 844px;
+  background: var(--bg);
+  border-radius: 40px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+/* STATUS BAR */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 28px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.status-bar .notch {
+  width: 120px;
+  height: 30px;
+  background: #000;
+  border-radius: 0 0 20px 20px;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* SCREENS */
+.screen {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 90px;
+  scrollbar-width: none;
+}
+.screen::-webkit-scrollbar { display: none; }
+.screen.active { display: block; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 82px;
+  background: rgba(20,20,24,0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 10px 16px;
+  z-index: 100;
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 12px;
+  transition: all .2s;
+  flex: 1;
+}
+.nav-item:hover { background: rgba(122,0,223,0.1); }
+.nav-item.active .nav-icon { color: var(--purple-light); }
+.nav-item.active .nav-label { color: var(--purple-light); }
+.nav-icon { font-size: 22px; color: var(--text-muted); transition: color .2s; }
+.nav-label { font-size: 10px; color: var(--text-muted); font-weight: 600; transition: color .2s; }
+
+/* COMMON COMPONENTS */
+.screen-header {
+  padding: 20px 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.screen-title {
+  font-family: var(--font-head);
+  font-size: 20px;
+  font-weight: 700;
+}
+.section-title {
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 24px 20px 12px;
+}
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 0 20px 12px;
+  border: 1px solid var(--border);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all .2s;
+}
+.btn-primary {
+  background: var(--purple);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--purple-light); transform: translateY(-1px); }
+.btn-secondary {
+  background: var(--card2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-sm { padding: 8px 14px; font-size: 12px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.chip.connected { background: rgba(52,199,89,0.15); border-color: rgba(52,199,89,0.3); color: var(--green); }
+.chip.pending { background: rgba(255,149,0,0.15); border-color: rgba(255,149,0,0.3); color: var(--orange); }
+
+/* PROGRESS RING */
+.ring-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.ring-label { position: absolute; text-align: center; }
+.ring-value { font-family: var(--font-head); font-size: 22px; font-weight: 700; display: block; }
+.ring-unit { font-size: 11px; color: var(--text-secondary); }
+
+/* METRIC CARDS */
+.metrics-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin: 0 20px 12px;
+}
+.metric-card {
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.metric-value { font-family: var(--font-head); font-size: 18px; font-weight: 700; }
+.metric-label { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+.metric-icon { font-size: 18px; margin-bottom: 4px; }
+
+/* WORKOUT ITEM */
+.workout-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.workout-item:last-child { border-bottom: none; }
+.workout-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(122,0,223,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.workout-info { flex: 1 }
+.workout-name { font-weight: 700; font-size: 14px; }
+.workout-meta { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.workout-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(52,199,89,0.15);
+  color: var(--green);
+}
+
+/* FOOD ITEM */
+.food-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.food-item:last-child { border-bottom: none; }
+.food-name { font-size: 14px; font-weight: 600; }
+.food-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.food-kcal { font-family: var(--font-head); font-size: 14px; font-weight: 700; color: var(--orange); }
+
+/* INTEGRATION ITEM */
+.int-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.int-item:last-child { border-bottom: none; }
+.int-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.int-info { flex: 1 }
+.int-name { font-weight: 700; font-size: 14px; }
+.int-desc { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.toggle {
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--border);
+  position: relative;
+  cursor: pointer;
+  transition: background .3s;
+  flex-shrink: 0;
+}
+.toggle.on { background: var(--green); }
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  top: 3px;
+  left: 3px;
+  transition: transform .3s;
+}
+.toggle.on::after { transform: translateX(18px); }
+
+/* ACHIEVEMENT BADGE */
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 0 20px 12px;
+}
+.badge {
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  border: 1px solid var(--border);
+  text-align: center;
+  font-size: 24px;
+}
+.badge.locked { opacity: 0.3; filter: grayscale(1); }
+.badge-name { font-size: 9px; color: var(--text-secondary); margin-top: 4px; line-height: 1.2; }
+
+/* STREAK */
+.streak-card {
+  background: linear-gradient(135deg, #6f3dd0, #7a00df);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin: 0 20px 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.streak-fire { font-size: 40px; }
+.streak-info {}
+.streak-days { font-family: var(--font-head); font-size: 32px; font-weight: 900; }
+.streak-label { font-size: 13px; opacity: 0.8; }
+
+/* GRADIENT TEXT */
+.gradient-text {
+  background: linear-gradient(90deg, var(--purple-light), #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* PROGRESS BAR */
+.progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--purple), var(--purple-light));
+  transition: width 1s ease;
+}
+
+/* WEEK ROW */
+.week-row {
+  display: flex;
+  gap: 6px;
+  padding: 0 20px;
+  margin-bottom: 16px;
+}
+.day-dot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.day-label { font-size: 10px; color: var(--text-secondary); }
+.day-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.day-circle.done { background: var(--purple); border-color: var(--purple); color: #fff; }
+.day-circle.today { border-color: var(--purple-light); color: var(--purple-light); }
+.day-circle.skip { background: rgba(251,118,98,0.15); border-color: rgba(251,118,98,0.3); color: var(--red); }
+
+/* AVATAR */
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6f3dd0, #9469f3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 12px;
+}
+
+/* MACRO BARS */
+.macro-row { display: flex; gap: 10px; margin: 12px 0 0; }
+.macro-item { flex: 1; }
+.macro-label { font-size: 10px; color: var(--text-secondary); margin-bottom: 4px; }
+.macro-val { font-size: 13px; font-weight: 700; }
+.macro-bar { height: 4px; border-radius: 2px; margin-top: 4px; }
+
+/* FAB */
+.fab {
+  position: fixed;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--purple-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(122,0,223,0.4);
+  border: none;
+  color: #fff;
+  transition: all .2s;
+  z-index: 50;
+}
+.fab:hover { transform: scale(1.05); }
+
+/* MODAL */
+.modal-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  align-items: flex-end;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  width: 100%;
+  background: var(--card);
+  border-radius: 24px 24px 0 0;
+  padding: 20px;
+  max-height: 80%;
+  overflow-y: auto;
+}
+.modal-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+.modal-title {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+.input-group { margin-bottom: 14px; }
+.input-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600; }
+.input-field {
+  width: 100%;
+  background: #37383d;
+  color: var(--text);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-size: 14px;
+  font-family: var(--font-body);
+  outline: none;
+}
+.input-field:focus { border: 2px solid var(--purple-light); }
+select.input-field { appearance: none; }
+
+/* CHART CONTAINER */
+.chart-wrap { padding: 0 20px; height: 160px; position: relative; }
+
+/* TAG PILL */
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.tag {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(122,0,223,0.15);
+  color: var(--purple-light);
+  border: 1px solid rgba(122,0,223,0.3);
+  cursor: pointer;
+}
+.tag.selected { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+/* ANIM */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.screen.active { animation: fadeUp .25s ease; }
+</style>
+</head>
+<body>
+
+<div class="device-frame" id="app">
+  <div class="notch"></div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <span style="width:120px"></span>
+    <span>󰤥 ⚡100%</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 1: HOME / DASHBOARD
+  ═══════════════════════════════════════ -->
+  <div class="screen active" id="screen-home">
+
+    <div class="screen-header" style="padding-top:24px">
+      <div>
+        <div style="font-size:13px;color:var(--text-secondary)">Понедельник, 30 марта</div>
+        <div style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-top:2px">
+          Привет, <span class="gradient-text">Стас</span> 👋
+        </div>
+      </div>
+      <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#6f3dd0,#9469f3);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer" onclick="goTo('profile')">🧑</div>
+    </div>
+
+    <!-- Streak -->
+    <div style="margin-top:20px">
+      <div class="streak-card">
+        <div class="streak-fire">🔥</div>
+        <div class="streak-info">
+          <div class="streak-days">12</div>
+          <div class="streak-label">дней подряд — лучший результат!</div>
+        </div>
+        <div style="margin-left:auto;text-align:center">
+          <div style="font-size:11px;color:rgba(255,255,255,0.6)">до рекорда</div>
+          <div style="font-family:var(--font-head);font-size:18px;font-weight:700">3 дня</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Week -->
+    <div class="section-title">эта неделя</div>
+    <div class="week-row">
+      <div class="day-dot"><div class="day-label">Пн</div><div class="day-circle done">✓</div></div>
+      <div class="day-dot"><div class="day-label">Вт</div><div class="day-circle done">✓</div></div>
+      <div class="day-dot"><div class="day-label">Ср</div><div class="day-circle done">✓</div></div>
+      <div class="day-dot"><div class="day-label">Чт</div><div class="day-circle skip">✗</div></div>
+      <div class="day-dot"><div class="day-label">Пт</div><div class="day-circle done">✓</div></div>
+      <div class="day-dot"><div class="day-label">Сб</div><div class="day-circle today">30</div></div>
+      <div class="day-dot"><div class="day-label">Вс</div><div class="day-circle">31</div></div>
+    </div>
+
+    <!-- Today Summary -->
+    <div class="section-title">сегодня</div>
+    <div class="metrics-row">
+      <div class="metric-card" onclick="goTo('nutrition')">
+        <div class="metric-icon">🍎</div>
+        <div class="metric-value" style="color:var(--orange)">1 840</div>
+        <div class="metric-label">ккал из 2 200</div>
+        <div class="progress-bar" style="margin-top:6px"><div class="progress-fill" style="width:84%"></div></div>
+      </div>
+      <div class="metric-card" onclick="goTo('workouts')">
+        <div class="metric-icon">💪</div>
+        <div class="metric-value" style="color:var(--purple-light)">1 / 2</div>
+        <div class="metric-label">тренировки</div>
+        <div class="progress-bar" style="margin-top:6px"><div class="progress-fill" style="width:50%"></div></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">💧</div>
+        <div class="metric-value" style="color:#4FC3F7">1.6</div>
+        <div class="metric-label">литров воды</div>
+        <div class="progress-bar" style="margin-top:6px"><div class="progress-fill" style="width:66%;background:linear-gradient(90deg,#0693e3,#4FC3F7)"></div></div>
+      </div>
+    </div>
+
+    <!-- Next Workout -->
+    <div class="section-title">следующая тренировка</div>
+    <div class="card" style="cursor:pointer" onclick="goTo('workouts')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:52px;height:52px;border-radius:14px;background:rgba(122,0,223,0.2);display:flex;align-items:center;justify-content:center;font-size:26px">🏋️</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:15px">Силовая — Верх тела</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Сегодня · 18:00 · ~55 мин</div>
+          <div class="tag-row" style="margin:8px 0 0">
+            <span class="tag">Жим лёжа</span>
+            <span class="tag">Тяга</span>
+            <span class="tag">+4</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress mini -->
+    <div class="section-title">прогресс за месяц</div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-size:12px;color:var(--text-secondary)">Вес</div>
+          <div style="font-family:var(--font-head);font-size:20px;font-weight:700">96.2 <span style="font-size:12px;color:var(--text-secondary)">кг</span></div>
+          <div style="font-size:11px;color:var(--green)">↓ 1.8 кг за месяц</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:var(--text-secondary)">Цель</div>
+          <div style="font-family:var(--font-head);font-size:20px;font-weight:700">90 <span style="font-size:12px;color:var(--text-secondary)">кг</span></div>
+          <div style="font-size:11px;color:var(--text-secondary)">осталось 6.2 кг</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:100px;padding:0">
+        <canvas id="homeChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Recent from integrations -->
+    <div class="section-title">из ваших приложений</div>
+    <div class="card" onclick="goTo('integrations')" style="cursor:pointer">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="font-size:20px">🍎</div>
+        <div style="font-size:13px;font-weight:600">Apple Health синхронизирован</div>
+        <div style="margin-left:auto"><span class="chip connected">● В сети</span></div>
+      </div>
+      <div style="display:flex;gap:16px">
+        <div><div style="font-size:10px;color:var(--text-secondary)">Шагов сегодня</div><div style="font-weight:700;font-size:14px">8 420</div></div>
+        <div><div style="font-size:10px;color:var(--text-secondary)">Сон</div><div style="font-weight:700;font-size:14px">7ч 20м</div></div>
+        <div><div style="font-size:10px;color:var(--text-secondary)">Пульс</div><div style="font-weight:700;font-size:14px">68 уд</div></div>
+      </div>
+    </div>
+
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 2: WORKOUTS
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-workouts">
+
+    <div class="screen-header" style="padding-top:24px">
+      <div class="screen-title">Тренировки</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-workout')">+ Добавить</button>
+    </div>
+
+    <div class="section-title">эта неделя</div>
+    <div class="week-row">
+      <div class="day-dot"><div class="day-label">Пн</div><div class="day-circle done">✓</div></div>
+      <div class="day-dot"><div class="day-label">Вт</div><div class="day-circle done">✓</div></div>
+      <div class="day-dot"><div class="day-label">Ср</div><div class="day-circle done">✓</div></div>
+      <div class="day-dot"><div class="day-label">Чт</div><div class="day-circle skip">✗</div></div>
+      <div class="day-dot"><div class="day-label">Пт</div><div class="day-circle done">✓</div></div>
+      <div class="day-dot"><div class="day-label">Сб</div><div class="day-circle today">30</div></div>
+      <div class="day-dot"><div class="day-label">Вс</div><div class="day-circle">31</div></div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="metric-icon">📅</div>
+        <div class="metric-value" style="color:var(--purple-light)">24</div>
+        <div class="metric-label">тренировок</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">⏱️</div>
+        <div class="metric-value" style="color:var(--orange)">21ч</div>
+        <div class="metric-label">общий объём</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">🏆</div>
+        <div class="metric-value" style="color:var(--green)">3</div>
+        <div class="metric-label">рекорда</div>
+      </div>
+    </div>
+
+    <!-- Today workout -->
+    <div class="section-title">запланировано сегодня</div>
+    <div class="card" style="background:linear-gradient(135deg,rgba(111,61,208,0.3),rgba(122,0,223,0.15));border-color:rgba(122,0,223,0.3)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-family:var(--font-head);font-size:15px;font-weight:700">Силовая — Верх тела</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">18:00 · ~55 мин · 6 упражнений</div>
+        </div>
+        <span class="chip" style="background:rgba(122,0,223,0.2);border-color:rgba(122,0,223,0.4);color:var(--purple-light)">Сегодня</span>
+      </div>
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px" id="exercise-list">
+        <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">1</span>
+          <span style="flex:1">Жим штанги лёжа</span>
+          <span style="color:var(--text-secondary)">4×8 · 80кг</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">2</span>
+          <span style="flex:1">Тяга верхнего блока</span>
+          <span style="color:var(--text-secondary)">4×10 · 65кг</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">3</span>
+          <span style="flex:1">Жим гантелей сидя</span>
+          <span style="color:var(--text-secondary)">3×12 · 24кг</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-muted)">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">+3</span>
+          <span>ещё упражнения</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px;justify-content:center">▶ Начать тренировку</button>
+    </div>
+
+    <!-- History -->
+    <div class="section-title">история</div>
+    <div class="card">
+      <div class="workout-item">
+        <div class="workout-icon">🏋️</div>
+        <div class="workout-info">
+          <div class="workout-name">Силовая — Ноги</div>
+          <div class="workout-meta">Пт, 28 мар · 62 мин · 7 упражнений</div>
+        </div>
+        <div class="workout-badge">✓</div>
+      </div>
+      <div class="workout-item">
+        <div class="workout-icon">🏃</div>
+        <div class="workout-info">
+          <div class="workout-name">Кардио — Бег</div>
+          <div class="workout-meta">Ср, 26 мар · 35 мин · 5.2 км</div>
+        </div>
+        <div class="workout-badge">✓</div>
+      </div>
+      <div class="workout-item">
+        <div class="workout-icon">🏋️</div>
+        <div class="workout-info">
+          <div class="workout-name">Силовая — Верх тела</div>
+          <div class="workout-meta">Вт, 25 мар · 58 мин · 6 упражнений</div>
+        </div>
+        <div class="workout-badge">✓</div>
+      </div>
+      <div class="workout-item">
+        <div class="workout-icon">🧘</div>
+        <div class="workout-info">
+          <div class="workout-name">Стретчинг</div>
+          <div class="workout-meta">Пн, 24 мар · 25 мин</div>
+        </div>
+        <div class="workout-badge">✓</div>
+      </div>
+    </div>
+
+    <!-- Strength chart -->
+    <div class="section-title">прогресс — жим лёжа</div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+        <div><div style="font-size:12px;color:var(--text-secondary)">Лучший результат</div><div style="font-family:var(--font-head);font-size:18px;font-weight:700">82.5 кг</div></div>
+        <div style="text-align:right"><div style="font-size:12px;color:var(--text-secondary)">Рост за месяц</div><div style="font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--green)">+7.5 кг</div></div>
+      </div>
+      <div style="height:100px;position:relative"><canvas id="strengthChart"></canvas></div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 3: NUTRITION
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-nutrition">
+
+    <div class="screen-header" style="padding-top:24px">
+      <div class="screen-title">Питание</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-food')">+ Добавить</button>
+    </div>
+
+    <!-- Calorie ring -->
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="ring-wrap">
+          <canvas id="calorieRing" width="100" height="100"></canvas>
+          <div class="ring-label">
+            <span class="ring-value">1840</span>
+            <span class="ring-unit">ккал</span>
+          </div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:12px;color:var(--text-secondary)">Суточная цель</div>
+          <div style="font-family:var(--font-head);font-size:22px;font-weight:700">2 200 <span style="font-size:13px;color:var(--text-secondary)">ккал</span></div>
+          <div style="font-size:12px;color:var(--green);margin-top:4px">остаток: 360 ккал</div>
+          <!-- Macros -->
+          <div class="macro-row">
+            <div class="macro-item">
+              <div class="macro-label">Белки</div>
+              <div class="macro-val">142г</div>
+              <div class="macro-bar" style="background:rgba(122,0,223,0.3)"><div style="height:100%;width:78%;background:var(--purple-light);border-radius:2px"></div></div>
+            </div>
+            <div class="macro-item">
+              <div class="macro-label">Жиры</div>
+              <div class="macro-val">61г</div>
+              <div class="macro-bar" style="background:rgba(255,149,0,0.2)"><div style="height:100%;width:68%;background:var(--orange);border-radius:2px"></div></div>
+            </div>
+            <div class="macro-item">
+              <div class="macro-label">Углеводы</div>
+              <div class="macro-val">198г</div>
+              <div class="macro-bar" style="background:rgba(6,106,171,0.2)"><div style="height:100%;width:72%;background:var(--blue);border-radius:2px"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Integration status -->
+    <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer" onclick="goTo('integrations')">
+      <span style="font-size:20px">📗</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700">FatSecret подключён</div>
+        <div style="font-size:11px;color:var(--text-secondary)">Данные синхронизированы 5 мин назад</div>
+      </div>
+      <span class="chip connected">● Активен</span>
+    </div>
+
+    <!-- Meals -->
+    <div class="section-title">завтрак <span style="color:var(--text-muted);font-weight:400">· 540 ккал</span></div>
+    <div class="card">
+      <div class="food-item">
+        <div><div class="food-name">Овсяная каша на воде</div><div class="food-meta">200г · Б 10г · Ж 6г · У 54г</div></div>
+        <div class="food-kcal">312</div>
+      </div>
+      <div class="food-item">
+        <div><div class="food-name">Яйцо куриное варёное</div><div class="food-meta">2 шт · Б 13г · Ж 11г · У 1г</div></div>
+        <div class="food-kcal">158</div>
+      </div>
+      <div class="food-item">
+        <div><div class="food-name">Кофе чёрный</div><div class="food-meta">250мл · без сахара</div></div>
+        <div class="food-kcal">5</div>
+      </div>
+    </div>
+
+    <div class="section-title">обед <span style="color:var(--text-muted);font-weight:400">· 680 ккал</span></div>
+    <div class="card">
+      <div class="food-item">
+        <div><div class="food-name">Куриная грудка</div><div class="food-meta">200г · Б 46г · Ж 4г · У 0г</div></div>
+        <div class="food-kcal">218</div>
+      </div>
+      <div class="food-item">
+        <div><div class="food-name">Гречка отварная</div><div class="food-meta">150г · Б 8г · Ж 2г · У 51г</div></div>
+        <div class="food-kcal">252</div>
+      </div>
+      <div class="food-item">
+        <div><div class="food-name">Салат из овощей</div><div class="food-meta">180г · Б 3г · Ж 8г · У 12г</div></div>
+        <div class="food-kcal">128</div>
+      </div>
+    </div>
+
+    <div class="section-title">ужин <span style="color:var(--text-muted);font-weight:400">· 620 ккал</span></div>
+    <div class="card">
+      <div class="food-item">
+        <div><div class="food-name">Лосось запечённый</div><div class="food-meta">180г · Б 36г · Ж 22г · У 0г</div></div>
+        <div class="food-kcal">342</div>
+      </div>
+      <div class="food-item">
+        <div><div class="food-name">Рис варёный</div><div class="food-meta">120г · Б 4г · Ж 0г · У 40г</div></div>
+        <div class="food-kcal">174</div>
+      </div>
+      <div class="food-item" style="border:none">
+        <div><div class="food-name">Брокколи на пару</div><div class="food-meta">100г · Б 3г · Ж 0г · У 7г</div></div>
+        <div class="food-kcal">35</div>
+      </div>
+      <button class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:8px" onclick="openModal('modal-food')">+ Добавить блюдо</button>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 4: INTEGRATIONS
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-integrations">
+
+    <div class="screen-header" style="padding-top:24px">
+      <div class="screen-title">Интеграции</div>
+    </div>
+
+    <div style="padding:8px 20px 0;font-size:13px;color:var(--text-secondary)">
+      Подключите привычные приложения — данные будут собираться автоматически
+    </div>
+
+    <!-- Health Platforms -->
+    <div class="section-title">health-платформы</div>
+    <div class="card">
+      <div class="int-item">
+        <div class="int-logo" style="background:rgba(255,45,85,0.15)">🍎</div>
+        <div class="int-info">
+          <div class="int-name">Apple Health</div>
+          <div class="int-desc">Шаги, сон, пульс, калории, тренировки</div>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="int-item">
+        <div class="int-logo" style="background:rgba(52,199,89,0.15)">🤖</div>
+        <div class="int-info">
+          <div class="int-name">Google Health Connect</div>
+          <div class="int-desc">Активность, сон, пульс, вес</div>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="int-item" style="border:none">
+        <div class="int-logo" style="background:rgba(0,112,243,0.15)">💙</div>
+        <div class="int-info">
+          <div class="int-name">Samsung Health</div>
+          <div class="int-desc">Стресс, индекс энергии, пульс</div>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+
+    <!-- Nutrition -->
+    <div class="section-title">питание</div>
+    <div class="card">
+      <div class="int-item">
+        <div class="int-logo" style="background:rgba(52,199,89,0.15)">📗</div>
+        <div class="int-info">
+          <div class="int-name">FatSecret</div>
+          <div class="int-desc">Дневник питания, КБЖУ, база продуктов</div>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="int-item">
+        <div class="int-logo" style="background:rgba(255,149,0,0.15)">🥗</div>
+        <div class="int-info">
+          <div class="int-name">Yazio</div>
+          <div class="int-desc">Дневник питания и цели по калориям</div>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="int-item" style="border:none">
+        <div class="int-logo" style="background:rgba(6,106,171,0.15)">🔵</div>
+        <div class="int-info">
+          <div class="int-name">MyFitnessPal</div>
+          <div class="int-desc">Синхронизация дневника питания</div>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+
+    <!-- Wearables -->
+    <div class="section-title">носимые устройства</div>
+    <div class="card">
+      <div class="int-item">
+        <div class="int-logo" style="background:rgba(255,149,0,0.15)">⌚</div>
+        <div class="int-info">
+          <div class="int-name">Xiaomi Mi Band</div>
+          <div class="int-desc">Шаги, сон, пульс, калории · популярное</div>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="int-item">
+        <div class="int-logo" style="background:rgba(251,118,98,0.15)">🔴</div>
+        <div class="int-info">
+          <div class="int-name">Garmin Connect</div>
+          <div class="int-desc">VO2 max, HRV, детальный анализ</div>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="int-item">
+        <div class="int-logo" style="background:rgba(255,149,0,0.15)">🟠</div>
+        <div class="int-info">
+          <div class="int-name">Strava</div>
+          <div class="int-desc">Бег, велосипед, маршруты</div>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="int-item" style="border:none">
+        <div class="int-logo" style="background:rgba(6,106,171,0.15)">🔵</div>
+        <div class="int-info">
+          <div class="int-name">Huawei Health</div>
+          <div class="int-desc">Активность, сон, SpO2</div>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+
+    <!-- Smart Scales -->
+    <div class="section-title">умные весы</div>
+    <div class="card">
+      <div class="int-item">
+        <div class="int-logo" style="background:rgba(255,149,0,0.15)">⚖️</div>
+        <div class="int-info">
+          <div class="int-name">Xiaomi Scale</div>
+          <div class="int-desc">Вес, жир, мышцы, вода, BMI · популярное</div>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="int-item">
+        <div class="int-logo" style="background:rgba(52,199,89,0.15)">⚖️</div>
+        <div class="int-info">
+          <div class="int-name">Withings Body</div>
+          <div class="int-desc">13 показателей состава тела, пульс</div>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="int-item" style="border:none">
+        <div class="int-logo" style="background:rgba(122,0,223,0.15)">⚖️</div>
+        <div class="int-info">
+          <div class="int-name">Renpho</div>
+          <div class="int-desc">Состав тела, продаётся на Wildberries</div>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+
+    <!-- Cycle -->
+    <div class="section-title">женское здоровье</div>
+    <div class="card">
+      <div class="int-item">
+        <div class="int-logo" style="background:rgba(251,118,98,0.15)">🌸</div>
+        <div class="int-info">
+          <div class="int-name">Flo</div>
+          <div class="int-desc">Фаза цикла, адаптация нагрузки</div>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="int-item" style="border:none">
+        <div class="int-logo" style="background:rgba(122,0,223,0.15)">🌷</div>
+        <div class="int-info">
+          <div class="int-name">Clue</div>
+          <div class="int-desc">Цикл, симптомы, настроение</div>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="section-title">календари</div>
+    <div class="card">
+      <div class="int-item">
+        <div class="int-logo" style="background:rgba(6,106,171,0.15)">📅</div>
+        <div class="int-info">
+          <div class="int-name">Google Calendar</div>
+          <div class="int-desc">Тренировки как события</div>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="int-item" style="border:none">
+        <div class="int-logo" style="background:rgba(255,45,85,0.15)">📆</div>
+        <div class="int-info">
+          <div class="int-name">Apple Calendar</div>
+          <div class="int-desc">Напоминания и расписание тренировок</div>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+
+    <!-- Telegram -->
+    <div class="section-title">уведомления</div>
+    <div class="card">
+      <div class="int-item" style="border:none">
+        <div class="int-logo" style="background:rgba(6,106,171,0.15)">✈️</div>
+        <div class="int-info">
+          <div class="int-name">Telegram Бот</div>
+          <div class="int-desc">Напоминания, план от тренера, отчёты</div>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 5: PROFILE
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-profile">
+
+    <div class="screen-header" style="padding-top:24px">
+      <div class="screen-title">Профиль</div>
+      <button class="btn btn-secondary btn-sm">Изменить</button>
+    </div>
+
+    <!-- Avatar -->
+    <div style="text-align:center;padding:20px 20px 0">
+      <div class="avatar">🧑</div>
+      <div style="font-family:var(--font-head);font-size:18px;font-weight:700">Стас Ротман</div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">Цель: снижение веса · Опыт 5 лет</div>
+      <div class="tag-row" style="justify-content:center;margin-top:12px">
+        <span class="tag selected">Похудение</span>
+        <span class="tag selected">Силовые</span>
+        <span class="tag">Кардио</span>
+      </div>
+    </div>
+
+    <!-- Body stats -->
+    <div class="section-title">параметры тела</div>
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="metric-icon">⚖️</div>
+        <div class="metric-value">96.2</div>
+        <div class="metric-label">кг · вес</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">📏</div>
+        <div class="metric-value">182</div>
+        <div class="metric-label">см · рост</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">🎯</div>
+        <div class="metric-value" style="color:var(--purple-light)">29</div>
+        <div class="metric-label">ИМТ</div>
+      </div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="metric-icon">💪</div>
+        <div class="metric-value" style="color:var(--orange)">22%</div>
+        <div class="metric-label">жир</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">🦾</div>
+        <div class="metric-value" style="color:var(--green)">74кг</div>
+        <div class="metric-label">мышцы</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">💧</div>
+        <div class="metric-value" style="color:#4FC3F7">56%</div>
+        <div class="metric-label">вода</div>
+      </div>
+    </div>
+
+    <!-- Goal -->
+    <div class="section-title">цель</div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div style="font-size:12px;color:var(--text-secondary)">Текущий вес</div>
+          <div style="font-family:var(--font-head);font-size:20px;font-weight:700">96.2 кг</div>
+        </div>
+        <div style="font-size:24px;color:var(--text-muted)">→</div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:var(--text-secondary)">Цель</div>
+          <div style="font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--green)">90 кг</div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:62%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text-secondary)">
+        <span>Старт: 120 кг</span>
+        <span>Прогресс: 62%</span>
+        <span>Цель: 90 кг</span>
+      </div>
+    </div>
+
+    <!-- Achievements -->
+    <div class="section-title">достижения</div>
+    <div class="badge-grid">
+      <div class="badge">🔥<div class="badge-name">12 дней streak</div></div>
+      <div class="badge">💪<div class="badge-name">Первый PR</div></div>
+      <div class="badge">🏃<div class="badge-name">5 км бег</div></div>
+      <div class="badge">📓<div class="badge-name">30 тренировок</div></div>
+      <div class="badge locked">🥇<div class="badge-name">15 дней streak</div></div>
+      <div class="badge locked">⚡<div class="badge-name">100 тренировок</div></div>
+      <div class="badge locked">🏆<div class="badge-name">-10 кг</div></div>
+      <div class="badge locked">🌟<div class="badge-name">Год в Fit</div></div>
+    </div>
+
+    <!-- Weight chart -->
+    <div class="section-title">история веса</div>
+    <div class="card">
+      <div style="height:110px;position:relative"><canvas id="weightChart"></canvas></div>
+    </div>
+
+    <!-- Subscription -->
+    <div class="section-title">подписка</div>
+    <div class="card" style="background:linear-gradient(135deg,rgba(111,61,208,0.3),rgba(122,0,223,0.15));border-color:rgba(122,0,223,0.3)">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <span style="font-size:28px">⭐</span>
+        <div>
+          <div style="font-family:var(--font-head);font-size:15px;font-weight:700">Fit Premium</div>
+          <div style="font-size:12px;color:var(--text-secondary)">Активна до 30 апреля 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <span class="chip" style="font-size:11px">✓ ИИ-рекомендации</span>
+        <span class="chip" style="font-size:11px">✓ Учёт цикла</span>
+        <span class="chip" style="font-size:11px">✓ Экспорт PDF</span>
+        <span class="chip" style="font-size:11px">✓ Без ограничений</span>
+      </div>
+    </div>
+
+    <!-- Settings links -->
+    <div class="section-title">настройки</div>
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer">
+          <div style="display:flex;align-items:center;gap:12px"><span>🔔</span><span style="font-size:14px">Уведомления</span></div>
+          <span style="color:var(--text-muted)">›</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer">
+          <div style="display:flex;align-items:center;gap:12px"><span>🔒</span><span style="font-size:14px">Конфиденциальность</span></div>
+          <span style="color:var(--text-muted)">›</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;cursor:pointer">
+          <div style="display:flex;align-items:center;gap:12px"><span>❓</span><span style="font-size:14px">Справка и поддержка</span></div>
+          <span style="color:var(--text-muted)">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 20px 8px">
+      <button class="btn btn-secondary" style="width:100%;justify-content:center;color:var(--red);border-color:rgba(251,118,98,0.3)">Выйти из аккаунта</button>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       BOTTOM NAV
+  ═══════════════════════════════════════ -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="goTo('home')">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Главная</div>
+    </div>
+    <div class="nav-item" id="nav-workouts" onclick="goTo('workouts')">
+      <div class="nav-icon">💪</div>
+      <div class="nav-label">Тренировки</div>
+    </div>
+    <div class="nav-item" id="nav-nutrition" onclick="goTo('nutrition')">
+      <div class="nav-icon">🥗</div>
+      <div class="nav-label">Питание</div>
+    </div>
+    <div class="nav-item" id="nav-integrations" onclick="goTo('integrations')">
+      <div class="nav-icon">🔗</div>
+      <div class="nav-label">Сервисы</div>
+    </div>
+    <div class="nav-item" id="nav-profile" onclick="goTo('profile')">
+      <div class="nav-icon">🧑</div>
+      <div class="nav-label">Профиль</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MODALS
+  ═══════════════════════════════════════ -->
+
+  <!-- Add Workout Modal -->
+  <div class="modal-overlay" id="modal-workout" onclick="closeModalOutside(event, 'modal-workout')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Новая тренировка</div>
+      <div class="input-group">
+        <div class="input-label">Тип тренировки</div>
+        <select class="input-field">
+          <option>Силовая</option>
+          <option>Кардио</option>
+          <option>Функциональная</option>
+          <option>Стретчинг</option>
+          <option>Йога</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <div class="input-label">Название</div>
+        <input class="input-field" type="text" placeholder="Например: Верх тела">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="input-group">
+          <div class="input-label">Дата</div>
+          <input class="input-field" type="date">
+        </div>
+        <div class="input-group">
+          <div class="input-label">Время</div>
+          <input class="input-field" type="time" value="18:00">
+        </div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">Заметка / самочувствие</div>
+        <input class="input-field" type="text" placeholder="Опционально">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="closeModal('modal-workout')">Создать тренировку</button>
+      <button class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:10px" onclick="closeModal('modal-workout')">Отмена</button>
+    </div>
+  </div>
+
+  <!-- Add Food Modal -->
+  <div class="modal-overlay" id="modal-food" onclick="closeModalOutside(event, 'modal-food')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Добавить продукт</div>
+      <div class="input-group">
+        <div class="input-label">Приём пищи</div>
+        <select class="input-field">
+          <option>Завтрак</option>
+          <option>Обед</option>
+          <option>Ужин</option>
+          <option>Перекус</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <div class="input-label">Продукт или блюдо</div>
+        <input class="input-field" type="text" placeholder="Поиск в базе FatSecret...">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="input-group">
+          <div class="input-label">Количество (г / мл)</div>
+          <input class="input-field" type="number" placeholder="100">
+        </div>
+        <div class="input-group">
+          <div class="input-label">Калории (ккал)</div>
+          <input class="input-field" type="number" placeholder="Авто">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="input-group">
+          <div class="input-label">Белки (г)</div>
+          <input class="input-field" type="number" placeholder="0">
+        </div>
+        <div class="input-group">
+          <div class="input-label">Жиры (г)</div>
+          <input class="input-field" type="number" placeholder="0">
+        </div>
+        <div class="input-group">
+          <div class="input-label">Углеводы (г)</div>
+          <input class="input-field" type="number" placeholder="0">
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="closeModal('modal-food')">Добавить</button>
+      <button class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:10px" onclick="closeModal('modal-food')">Отмена</button>
+    </div>
+  </div>
+
+</div><!-- end device-frame -->
+
+<script>
+// ── NAVIGATION ──────────────────────────────
+function goTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+  const nav = document.getElementById('nav-' + screen);
+  if (nav) nav.classList.add('active');
+  // re-init charts when switching to screen
+  setTimeout(() => initCharts(), 50);
+}
+
+// ── MODALS ──────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function closeModalOutside(e, id) {
+  if (e.target.classList.contains('modal-overlay')) closeModal(id);
+}
+
+// ── CHARTS ──────────────────────────────────
+let chartsInit = false;
+function initCharts() {
+  if (chartsInit) return;
+  chartsInit = true;
+
+  const gridColor = 'rgba(255,255,255,0.05)';
+  const textColor = '#7D828C';
+
+  // HOME — Weight line chart
+  const homeCtx = document.getElementById('homeChart');
+  if (homeCtx) {
+    new Chart(homeCtx, {
+      type: 'line',
+      data: {
+        labels: ['1 мар','8 мар','15 мар','22 мар','30 мар'],
+        datasets: [{
+          data: [98.0, 97.4, 97.1, 96.8, 96.2],
+          borderColor: '#9469f3',
+          backgroundColor: 'rgba(148,105,243,0.15)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#9469f3',
+          pointRadius: 4,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
+          y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor }, min: 95, max: 99 }
+        }
+      }
+    });
+  }
+
+  // WORKOUTS — Strength bar chart
+  const strCtx = document.getElementById('strengthChart');
+  if (strCtx) {
+    new Chart(strCtx, {
+      type: 'bar',
+      data: {
+        labels: ['1 мар','8','15','22','30'],
+        datasets: [{
+          data: [75, 75, 77.5, 80, 82.5],
+          backgroundColor: 'rgba(122,0,223,0.6)',
+          borderColor: '#9469f3',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } },
+          y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor }, min: 70 }
+        }
+      }
+    });
+  }
+
+  // NUTRITION — Calorie donut ring
+  const ringCtx = document.getElementById('calorieRing');
+  if (ringCtx) {
+    new Chart(ringCtx, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [1840, 360],
+          backgroundColor: ['#7a00df', 'rgba(255,255,255,0.05)'],
+          borderWidth: 0,
+          circumference: 360
+        }]
+      },
+      options: {
+        responsive: false,
+        cutout: '72%',
+        plugins: { legend: { display: false }, tooltip: { enabled: false } }
+      }
+    });
+  }
+
+  // PROFILE — Weight history
+  const wCtx = document.getElementById('weightChart');
+  if (wCtx) {
+    new Chart(wCtx, {
+      type: 'line',
+      data: {
+        labels: ['Янв','Фев','Мар'],
+        datasets: [{
+          label: 'Вес',
+          data: [100.4, 98.2, 96.2],
+          borderColor: '#9469f3',
+          backgroundColor: 'rgba(148,105,243,0.1)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#9469f3',
+          pointRadius: 5,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
+          y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor }, min: 94, max: 102 }
+        }
+      }
+    });
+  }
+}
+
+// Init on load
+window.addEventListener('load', initCharts);
+</script>
+</body>
+</html>
